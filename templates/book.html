@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Create Room Reservation{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card bg-white shadow-sm border-0 rounded-4 p-4 p-md-5">
+            <div class="text-center mb-4">
+                <span class="badge bg-primary px-3 py-2 rounded-pill mb-2">Reservation Desk</span>
+                <h2 class="fw-bold text-dark">Book a Classroom or Laboratory</h2>
+                <p class="text-muted">Fill out the details below. Our system automatically validates time ranges and prevents double-booking before saving.</p>
+            </div>
+
+            <div id="timeWarning" class="alert alert-danger d-none" role="alert"></div>
+
+            <form method="POST" action="{{ url_for('book_room') }}" id="bookingForm" class="row g-3">
+                <!-- Room Selector -->
+                <div class="col-12">
+                    <label class="form-label fw-bold">Select Room / Laboratory <span class="text-danger">*</span></label>
+                    <select name="room_id" class="form-select form-select-lg" required>
+                        <option value="">-- Choose a Room --</option>
+                        {% for r in rooms %}
+                            <option value="{{ r.id }}" {% if (form_data and form_data.room_id == r.id) or (selected_room_id == r.id) %}selected{% endif %}>
+                                {{ r.id }} - {{ r.name }} ({{ r.room_type }} | Cap: {{ r.capacity }} | {{ r.location }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Requester Info (Auto-linked from logged in user) -->
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Requester Name</label>
+                    <input type="text" class="form-control bg-light" value="{{ current_user.name }}" readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Requester Email</label>
+                    <input type="email" class="form-control bg-light" value="{{ current_user.email }}" readonly>
+                </div>
+
+                <!-- Date -->
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Reservation Date <span class="text-danger">*</span></label>
+                    <input type="date" name="booking_date" id="booking_date" class="form-control" 
+                           min="{{ today }}"
+                           value="{{ form_data.booking_date if form_data else preset_date }}" required>
+                    <div class="form-text small text-muted">Past dates are blocked (Min: {{ today }}).</div>
+                </div>
+
+                <!-- Start Time -->
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Start Time <span class="text-danger">*</span></label>
+                    <input type="time" name="start_time" id="start_time" class="form-control" 
+                           value="{{ form_data.start_time if form_data else preset_start }}" required>
+                </div>
+
+                <!-- End Time -->
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">End Time <span class="text-danger">*</span></label>
+                    <input type="time" name="end_time" id="end_time" class="form-control" 
+                           value="{{ form_data.end_time if form_data else preset_end }}" required>
+                    <div class="invalid-feedback">End time must be strictly after start time.</div>
+                </div>
+
+                <!-- Purpose -->
+                <div class="col-12">
+                    <label class="form-label fw-bold">Purpose of Booking <span class="text-danger">*</span></label>
+                    <textarea name="purpose" class="form-control" rows="3" placeholder="e.g. Python Programming Lab Session (CS101) or Physics Study Group" required>{{ form_data.purpose if form_data else '' }}</textarea>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm py-3 fw-bold">
+                        <i class="bi bi-shield-check me-2"></i> Confirm & Submit Reservation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

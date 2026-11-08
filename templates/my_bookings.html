@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings - UniReserve{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">My Reservations</h2>
+        <p class="text-muted mb-0">Review your active bookings or cancel a reservation to free up the room slot.</p>
+    </div>
+    <a href="{{ url_for('book_room') }}" class="btn btn-primary shadow-sm">
+        <i class="bi bi-plus-circle me-1"></i> Reserve a Room
+    </a>
+</div>
+
+<!-- Bookings Table -->
+<div class="card bg-white shadow-sm border-0 rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-journal-bookmark me-2 text-primary"></i>Your Bookings List</h5>
+        <span class="badge bg-secondary">{{ bookings|length }} Total</span>
+    </div>
+    <div class="card-body p-0">
+        {% if bookings %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Room / Lab</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                            <tr>
+                                <td><span class="text-muted">#{{ b.id }}</span></td>
+                                <td>
+                                    <span class="fw-bold text-primary">{{ b.room_id }}</span><br>
+                                    <small class="text-muted">{{ b.room_name }} ({{ b.location }})</small>
+                                </td>
+                                <td><strong>{{ b.booking_date }}</strong></td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-clock me-1"></i>{{ b.start_time }} - {{ b.end_time }}
+                                    </span>
+                                </td>
+                                <td>{{ b.purpose }}</td>
+                                <td>
+                                    {% if b.status == 'Confirmed' %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Confirmed</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if b.status == 'Confirmed' %}
+                                        <form method="POST" action="{{ url_for('cancel_booking', booking_id=b.id) }}" 
+                                              onsubmit="return confirm('Are you sure you want to cancel your reservation for room {{ b.room_id }}?');" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-trash3 me-1"></i> Cancel
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-muted small">Slot Freed</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-5 text-center text-muted">
+                <i class="bi bi-calendar2-x fs-1 d-block mb-2"></i>
+                You do not have any room reservations yet.<br>
+                <a href="{{ url_for('book_room') }}" class="btn btn-primary btn-sm mt-3">
+                    <i class="bi bi-calendar-plus me-1"></i> Make Your First Reservation
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

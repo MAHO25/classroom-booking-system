@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Check Availability for Period{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold text-dark">Check Period Availability</h2>
+    <p class="text-muted">Select date and time window to immediately verify which rooms are available vs already booked.</p>
+</div>
+
+<!-- Time Selector Form -->
+<div class="card mb-4 bg-white shadow-sm">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('check_availability') }}" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Date</label>
+                <input type="date" name="date" class="form-control" value="{{ check_date }}" min="{{ today }}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Start Time</label>
+                <input type="time" name="start_time" id="start_time" class="form-control" value="{{ start_time }}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">End Time</label>
+                <input type="time" name="end_time" id="end_time" class="form-control" value="{{ end_time }}" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Room Type (Optional)</label>
+                <select name="type" class="form-select">
+                    <option value="">All Types</option>
+                    {% for t in all_types %}
+                        <option value="{{ t }}" {% if room_type == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-clock-history me-1"></i> Check Slots
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Available Rooms -->
+    <div class="col-lg-6">
+        <div class="card bg-white shadow-sm h-100 border-success">
+            <div class="card-header bg-success text-white py-3">
+                <h5 class="card-title mb-0 fw-bold">
+                    <i class="bi bi-check-circle-fill me-2"></i>AVAILABLE Rooms ({{ available_rooms|length }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if available_rooms %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Type</th>
+                                    <th>Capacity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in available_rooms %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ r.id }}</strong><br>
+                                            <small class="text-muted">{{ r.name }}</small>
+                                        </td>
+                                        <td><span class="badge badge-room-type">{{ r.room_type }}</span></td>
+                                        <td>{{ r.capacity }} seats</td>
+                                        <td>
+                                            <a href="{{ url_for('book_room', room_id=r.id, date=check_date, start_time=start_time, end_time=end_time) }}" class="btn btn-success btn-sm">
+                                                <i class="bi bi-plus-circle me-1"></i> Book Slot
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        No rooms available for the selected period.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Occupied Rooms -->
+    <div class="col-lg-6">
+        <div class="card bg-white shadow-sm h-100 border-danger">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="card-title mb-0 fw-bold">
+                    <i class="bi bi-x-circle-fill me-2"></i>OCCUPIED / CONFLICTING Rooms ({{ booked_rooms|length }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if booked_rooms %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Room</th>
+                                    <th>Conflicting Booking</th>
+                                    <th>Reserved By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for b in booked_rooms %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ b.room.id }}</strong><br>
+                                            <small class="text-muted">{{ b.room.name }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-danger border border-danger">
+                                                {{ b.conflict.start_time }} - {{ b.conflict.end_time }}
+                                            </span><br>
+                                            <small class="text-muted">{{ b.conflict.purpose }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ b.conflict.user_name }}</strong>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="p-4 text-center text-muted">
+                        No schedule conflicts! All rooms are free for this time period.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

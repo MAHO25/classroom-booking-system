@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Daily & Weekly Room Schedule{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">Room Reservation Schedule</h2>
+        <p class="text-muted mb-0">Interactive visual timetable showing facility reservations.</p>
+    </div>
+    <!-- Mode Toggle: Day vs Week -->
+    <div class="btn-group shadow-sm" role="group">
+        <a href="{{ url_for('schedule_view', view='day', date=current_date.isoformat()) }}" 
+           class="btn {% if view_type == 'day' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-calendar-day me-1"></i> Daily View
+        </a>
+        <a href="{{ url_for('schedule_view', view='week', date=current_date.isoformat()) }}" 
+           class="btn {% if view_type == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-calendar-week me-1"></i> Weekly View
+        </a>
+    </div>
+</div>
+
+<!-- Date Navigation Bar -->
+<div class="card mb-4 bg-white shadow-sm">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <a href="{{ url_for('schedule_view', view=view_type, date=prev_date) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-chevron-left me-1"></i> Previous {% if view_type == 'week' %}Week{% else %}Day{% endif %}
+        </a>
+
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="mb-0 fw-bold text-dark">
+                {% if view_type == 'week' %}
+                    Week: {{ week_days[0].strftime('%b %d') }} - {{ week_days[-1].strftime('%b %d, %Y') }}
+                {% else %}
+                    {{ current_date.strftime('%A, %B %d, %Y') }}
+                {% endif %}
+            </h5>
+            <a href="{{ url_for('schedule_view', view=view_type) }}" class="badge bg-secondary text-decoration-none">Today</a>
+        </div>
+
+        <a href="{{ url_for('schedule_view', view=view_type, date=next_date) }}" class="btn btn-outline-secondary btn-sm">
+            Next {% if view_type == 'week' %}Week{% else %}Day{% endif %} <i class="bi bi-chevron-right ms-1"></i>
+        </a>
+    </div>
+</div>
+
+{% if view_type == 'week' %}
+    <!-- WEEKLY VIEW: 7 Day Columns -->
+    <div class="row g-2">
+        {% for day in week_days %}
+            {% set day_str = day.isoformat() %}
+            {% set day_bookings = bookings_by_day[day_str] %}
+            <div class="col-md" style="min-width: 150px;">
+                <div class="week-day-col h-100">
+                    <div class="week-day-header {% if day_str == current_date.isoformat() %}today{% endif %}">
+                        <div class="text-uppercase small">{{ day.strftime('%a') }}</div>
+                        <div class="fs-5">{{ day.strftime('%d %b') }}</div>
+                    </div>
+                    <div class="pt-2">
+                        {% if day_bookings %}
+                            {% for b in day_bookings %}
+                                <div class="card mb-2 p-2 shadow-sm border-0" style="border-left: 3px solid #2563eb !important; background: #f8fafc;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary text-white" style="font-size: 0.7rem;">{{ b.room_id }}</span>
+                                        <small class="text-muted" style="font-size: 0.72rem;">{{ b.start_time }}-{{ b.end_time }}</small>
+                                    </div>
+                                    <div class="fw-semibold text-dark text-truncate mt-1" style="font-size: 0.8rem;" title="{{ b.purpose }}">{{ b.purpose }}</div>
+                                    <div class="text-muted text-truncate" style="font-size: 0.72rem;">By: {{ b.user_name }}</div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted py-4 small">
+                                <em>No bookings</em>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+{% else %}
+    <!-- DAILY TIMELINE VIEW -->
+    <div class="card bg-white shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered timeline-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 180px; text-align: left;" class="ps-3">Room / Lab</th>
+                            {% for slot in time_slots %}
+                                <th>{{ slot }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in rooms %}
+                            {% set b_list = room_schedules[r.id] %}
+                            <tr>
+                                <td class="ps-3 bg-light">
+                                    <strong class="text-primary">{{ r.id }}</strong><br>
+                                    <small class="text-muted text-truncate d-block" style="max-width: 160px;">{{ r.name }}</small>
+                                </td>
+                                {% for slot in time_slots %}
+                                    <td class="timeline-cell">
+                                        {% for b in b_list %}
+                                            {% if b.start_time <= slot and b.end_time > slot %}
+                                                <div class="booking-pill" title="{{ b.purpose }} ({{ b.user_name }})">
+                                                    {{ b.user_name }}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
